@@ -1,0 +1,36 @@
+server:
+  port: 8080
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://DB:qwerty123%3B@db.strrq4z.mongodb.net/GChatBE
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: chat-consumer-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    streams:
+      application-id: gchat-streams
+      replication-factor: 1
+      properties:
+        default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+
+  security:
+    user:
+      name: admin
+      password: 1
+    oauth2:
+      resourceserver:
+        jwt:
+          secret-key: your-actual-secret-key-min-256-bits-long
+          expiration: 3600
+
+
