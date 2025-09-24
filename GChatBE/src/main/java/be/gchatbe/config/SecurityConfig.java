@@ -8,6 +8,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
@@ -40,12 +42,12 @@ public class SecurityConfig {
     private ServerSecurityContextRepository securityContextRepository() {
         return new ServerSecurityContextRepository() {
             @Override
-            public Mono<Void> save(ServerWebExchange exchange, org.springframework.security.core.context.SecurityContext context) {
+            public Mono<Void> save(ServerWebExchange exchange, SecurityContext context) {
                 return Mono.empty(); // stateless
             }
 
             @Override
-            public Mono<org.springframework.security.core.context.SecurityContext> load(ServerWebExchange exchange) {
+            public Mono<SecurityContext> load(ServerWebExchange exchange) {
                 String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
                 if (authHeader != null && authHeader.startsWith("Bearer ")) {
                     String token = authHeader.substring(7);
@@ -54,7 +56,7 @@ public class SecurityConfig {
                             .map(user -> new UsernamePasswordAuthenticationToken(
                                     user.getUsername(),
                                     null,
-                                    org.springframework.security.core.authority.AuthorityUtils.createAuthorityList(user.getRole())
+                                    AuthorityUtils.createAuthorityList(user.getRole().name())
                             ))
                             .map(SecurityContextImpl::new);
                 }
