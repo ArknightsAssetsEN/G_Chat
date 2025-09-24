@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService  {
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public Flux<User> getAllUsers() {
         return userRepository.findAll();
@@ -33,12 +35,12 @@ public class UserService  {
         return userRepository.findById(id);
     }
 
-    public Mono<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+    public Mono<User> getByUsername(String username) {
+        return userRepository.getByUsername(username);
     }
 
-    public Mono<Boolean> existsByUsername(String username) {
-        return userRepository.existsByUsername(username);
+    public Mono<Boolean> checkPassword(User user, String rawPassword) {
+        return Mono.just(encoder.matches(rawPassword, user.getPassword()));
     }
 
 

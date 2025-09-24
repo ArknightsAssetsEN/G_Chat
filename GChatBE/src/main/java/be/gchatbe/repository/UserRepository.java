@@ -7,6 +7,5 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 public interface UserRepository extends ReactiveMongoRepository<User, UUID> {
-    Mono<User> findByUsername(String username);
-    Mono<Boolean> existsByUsername(String username);
+    Mono<User> getByUsername(String username);
 }

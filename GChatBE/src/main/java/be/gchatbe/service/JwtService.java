@@ -1,57 +1,42 @@
 package be.gchatbe.service;
 
-import be.gchatbe.entity.User;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
+import io.jsonwebtoken.security.Keys;
+import reactor.core.publisher.Mono;
+import io.jsonwebtoken.Jwts;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.time.Instant;
 import java.util.Date;
-import java.util.UUID;
 
 @Service
 public class JwtService {
-    @Value("${spring.security.oauth2.resourceserver.jwt.secret-key}")
-    private String jwtSecret;
+    private final SecretKey secretKey = Keys.hmacShaKeyFor(
+            "your-super-secret-key-must-be-at-least-256-bits-long".getBytes()
+    );
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.expiration}")
-    private int jwtExpirationInSeconds;
-
-    private SecretKey getSigningKey() {
-        return new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256");
-//        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    public Mono<String> generateToken(String username, String role) {
+        Instant now = Instant.now();
+        String token = Jwts.builder()
+                .subject(username)
+                .claim("role", role)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(3600)))
+                .signWith(secretKey)
+                .compact();
+        return Mono.just(token);
     }
 
-    public String generateAccessToken(User user) {
-        Instant now = Instant.now();
-        Instant expiration = now.plusSeconds(jwtExpirationInSeconds);
-
-        return Jwts.builder()
-                .setId(UUID.randomUUID().toString())
-                .setSubject(user.getUsername())
-                .claim("roles", user.getAuthorities().stream()
-                        .map(Object::toString)
-                        .toList())
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(expiration))
-                .signWith(getSigningKey())
-                .compact();
-    }
-
-    public String generateRefreshToken(User user) {
-        Instant now = Instant.now();
-        Instant expiration = now.plusSeconds(jwtExpirationInSeconds * 24 * 7); // 7 days
-
-        return Jwts.builder()
-                .setId(UUID.randomUUID().toString())
-                .setSubject(user.getUsername())
-                .claim("type", "refresh")
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(expiration))
-                .signWith(getSigningKey())
-                .compact();
+    public Mono<String> validateAndGetUsername(String token) {
+        try {
+            String subject = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getSubject();
+            return Mono.just(subject);
+        } catch (Exception e) {
+            return Mono.empty();
+        }
     }
 }
